@@ -1,0 +1,8 @@
+{
+  "version": 3,
+  "file": "index.js",
+  "sourceRoot": "../../../../",
+  "sources": ["contracts/payroll.compact"],
+  "names": [],
+  "mappings": ";;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;EAoCA;;;;;;;;;;;;;MASA,AAAA,UAWC;;;;;;;;;;;;;;;;;;;;;;OAAA;MAKD,AAAA,eAEC;;;;;;;;;;;;;;;;;;;;;;OAAA;;;;;;;;;;GAxBA;EAHD;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;IAPA;;;;;;;;;yEAA+B;IAC/B;;;;;;;;;yEAA4C;IAC5C;;;;;;;;;yEAAkC;UAMhC,KAAmB;IAAnB;;;;;;;2HAAA,KAAmB;;yEAAA;UACnB,KAAS;IAAT;;;;;;;2HAAA,KAAS;;yEAAA;;;;;;;GACV;EALD,AAAA,kBAAoC;;0DAApC,eAAoC;;;;;;;;;;;;;;GAAA;EAWpC,AAAA,aAWC;UAVO,QAA0B;QAEzB,GAAsD;;;;;;sCAArD,QAAM;6BAAP,GAAsD;;QACtD,GAA6D;;;;;;sCAA5D,QAAM;6BAAP,GAA6D;;UAG9D,cAA+B,GAAP,QAAM;IACpC;;;;;;;2HAAsB,cAAY;;yEAAf;UACnB,KAAS;;;;;6CAAa;;;;;;;;;;;kHAAS;;qBAAG,cAAY;IAA9C;;;;;;;2HAAA,KAAS;;yEAAA;UACT,KAAO;IAAP;;;;;;;;;;6FAAA,KAAO;;;;wEAAA;;GACR;EAKD,AAAA,kBAEC;UADC,KAAmB;IAAnB;;;;;;;2HAAA,KAAmB;;yEAAA;;GACpB;;;;;;;;;;;;;;;;IAlCD;qCAAA;;;;;;;;;;;0GAA+B;KAAA;IAC/B;qCAAA;;;;;;;;;;;0GAA4C;KAAA;IAC5C;qCAAA;;;;;;;;;;;0GAAkC;KAAA;;;;;;;;;;;;"
+}
