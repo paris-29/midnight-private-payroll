@@ -1,0 +1,64 @@
+// =============================================================================
+// payroll.compact — Midnight Private Payroll (Builder Challenge L1)
+// =============================================================================
+// PRIVACY MODEL
+//
+// PUBLIC (on-chain, visible to anyone):
+//   - payRuns              : how many payroll runs completed
+//   - lastDisclosedAmount  : last pay amount deliberately revealed (audit/demo)
+//   - totalPaid            : sum of disclosed pay amounts
+//
+// PRIVATE (witness / local private state — never stored raw without disclose):
+//   - secretPayAmount()    : employee's private pay amount for this run
+//   - Local private state { payAmount } lives only on the user's machine
+//
+// WHAT THE USER PROVES WITHOUT REVEALING:
+//   - That a valid private pay amount (1..1_000_000 units) was used
+//   - Circuit constraints held; observers only see values passed through disclose()
+//
+// disclose() is intentional when writing lastDisclosedAmount / totalPaid so
+// the compiler allows witness-tainted data onto the public ledger (payroll
+// audit trail). Full production payroll would commit+nullify amounts instead
+// of disclosing them — this L1 demo shows selective disclosure on purpose.
+// =============================================================================
+
+pragma language_version >= 0.22;
+
+import CompactStandardLibrary;
+
+// --- Public ledger state ---
+export ledger payRuns: Counter;
+export ledger lastDisclosedAmount: Uint<64>;
+export ledger totalPaid: Uint<64>;
+
+// --- Private witness (body in TypeScript; never on-chain by itself) ---
+witness secretPayAmount(): Uint<64>;
+
+constructor() {
+  lastDisclosedAmount = 0;
+  totalPaid = 0;
+}
+
+/**
+ * Process one private payroll payment.
+ * Proves amount is in range, then deliberately discloses it for public totals.
+ */
+export circuit processPay(): [] {
+  const amount = secretPayAmount();
+  // Valid pay band (proved in ZK, not just trusted)
+  assert((amount as Uint<0..1000001>) > (0 as Uint<0..1000001>), "pay amount must be > 0");
+  assert((amount as Uint<0..1000001>) <= (1000000 as Uint<0..1000001>), "pay amount must be <= 1_000_000");
+
+  // Deliberate public disclosure for audit-demo ledger fields
+  const publicAmount = disclose(amount);
+  lastDisclosedAmount = publicAmount;
+  totalPaid = disclose((totalPaid + publicAmount) as Uint<64>);
+  payRuns.increment(1);
+}
+
+/**
+ * Clear last disclosed amount without changing run count or total paid.
+ */
+export circuit clearLastAmount(): [] {
+  lastDisclosedAmount = 0;
+}
