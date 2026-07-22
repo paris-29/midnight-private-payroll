@@ -1,0 +1,52 @@
+/*
+ * ============================================================
+ * Rise In Midnight Builder Challenge — Level 1 (New Moon)
+ * Privacy boundary for this contract
+ * ============================================================
+ *
+ * PUBLIC (on-chain ledger — visible to everyone):
+ *   - counter : public Counter of successful authorized increments
+ *   - owner   : public key (hash of private secret), set at deploy
+ *
+ * PRIVATE (local witness — never written raw to the ledger):
+ *   - localSecretKey() : 32-byte secret held only by the caller DApp
+ *
+ * PROVES without revealing:
+ *   - Caller knows localSecretKey that hashes to `owner`
+ *   - Secret key bytes never appear in public state or circuit args
+ *
+ * disclose() usage:
+ *   - Only the derived public key is disclosed in the constructor.
+ *   - The secret key itself is never disclosed.
+ * ============================================================
+ */
+
+pragma language_version 0.23;
+
+import CompactStandardLibrary;
+
+export ledger counter: Counter;
+export ledger owner: Bytes<32>;
+
+witness localSecretKey(): Bytes<32>;
+
+pure circuit derivePublicKey(sk: Bytes<32>): Bytes<32> {
+  return persistentHash<Vector<2, Bytes<32>>>([
+    pad(32, "risein:l1:counter:v1"),
+    sk,
+  ]);
+}
+
+constructor() {
+  owner = disclose(derivePublicKey(localSecretKey()));
+}
+
+export circuit increment(): [] {
+  assert(owner == derivePublicKey(localSecretKey()), "unauthorized");
+  counter.increment(1);
+}
+
+export circuit resetOwner(): [] {
+  assert(owner == derivePublicKey(localSecretKey()), "unauthorized");
+  owner = disclose(derivePublicKey(localSecretKey()));
+}
