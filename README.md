@@ -6,7 +6,7 @@
 
 | Network  | Address |
 |----------|---------|
-| Preview  | `0cbf31ad742ecc85dde1a315717c75b6ef36c186246484aedd83518da6f32273` |
+| Preview  | `027bb11dcd593df06f83e0925691a7730a8b8590ff715cb60c52dfc791e9c542` |
 | Preprod  | _not deployed yet_ |
 | Local    | `c94599ae5b813e860c7300d2beb363c0a7b3dc5ec48a0be1e513a9e9322ed54e` (from last `yarn test:local`) |
 
