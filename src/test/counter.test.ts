@@ -7,14 +7,12 @@ import {
   type DeployedContract,
 } from '@midnight-ntwrk/midnight-js-contracts';
 import type { ContractAddress } from '@midnight-ntwrk/midnight-js-protocol/compact-runtime';
-import {
-  type EnvironmentConfiguration,
-  waitForFunds,
-} from '@midnight-ntwrk/testkit-js';
+import { unshieldedToken } from '@midnight-ntwrk/midnight-js-protocol/ledger';
+import { type EnvironmentConfiguration } from '@midnight-ntwrk/testkit-js';
 import pino from 'pino';
 import { createHash, randomBytes } from 'node:crypto';
-import { firstValueFrom, throwError } from 'rxjs';
-import { filter, take, tap, timeout } from 'rxjs/operators';
+import { firstValueFrom } from 'rxjs';
+import { filter, take, tap } from 'rxjs/operators';
 
 import { getConfig } from '../config.js';
 import {
@@ -103,10 +101,11 @@ describe(`Counter Contract (${network})`, () => {
   const config = getConfig();
   const secret = resolveSecret(network);
   const isRemote = network !== 'local';
-  const syncTimeoutMs = Number(
-    process.env['MIDNIGHT_SYNC_TIMEOUT_MS'] ??
-      (isRemote ? 60 * 60_000 : 10 * 60_000),
-  );
+  // Preprod dust progress often never hits isStrictlyComplete; wait for coins separately.
+  const requireDustSync =
+    process.env['MIDNIGHT_SYNC_REQUIRE_DUST'] === '1'
+      ? true
+      : !isRemote;
 
   async function queryLedger(p: CounterProviders) {
     const state = await p.publicDataProvider.queryContractState(contractAddress);
@@ -131,41 +130,67 @@ describe(`Counter Contract (${network})`, () => {
 
     wallet = await MidnightWalletProvider.build(logger, envConfig, secret);
     await wallet.start();
-    await syncWallet(logger, wallet.wallet, syncTimeoutMs);
+    await syncWallet(logger, wallet.wallet, {
+      requireDust: requireDustSync,
+    });
 
     if (isRemote) {
-      const nightBalance = await waitForFunds(
-        wallet.wallet,
-        envConfig,
-        false,
-        wallet.unshieldedKeystore,
-      );
+      // NOTE: testkit-js's waitForFunds() blocks on its OWN syncWallet, which
+      // requires dust.isStrictlyComplete() — on Preprod that never resolves.
+      // Read the balance ourselves and register for DUST separately instead.
+      const nightRaw = unshieldedToken().raw;
+      const state = await firstValueFrom(wallet.wallet.state());
+      const nightBalance = state.unshielded.balances[nightRaw] ?? 0n;
       logger.info(`Wallet NIGHT balance on '${network}': ${nightBalance}`);
 
-      // Dust generation is async after NIGHT registration; wait for spendable DUST.
-      const dustTimeoutMs = Number(
-        process.env['WAIT_FOR_DUST_TIMEOUT_MS'] ?? 30 * 60_000,
+      const unregistered = state.unshielded.availableCoins.filter(
+        (coin: { utxo: { type: unknown } } & { meta?: { registeredForDustGeneration?: boolean } }) =>
+          coin.utxo.type === nightRaw &&
+          coin.meta?.registeredForDustGeneration !== true,
       );
-      logger.info(`Waiting for spendable DUST (timeout ${dustTimeoutMs}ms)...`);
+      if (unregistered.length > 0) {
+        logger.info(`Registering ${unregistered.length} NIGHT UTXO(s) for dust generation...`);
+        const recipe = await wallet.wallet.registerNightUtxosForDustGeneration(
+          unregistered,
+          wallet.unshieldedKeystore.getPublicKey(),
+          (payload) => wallet.unshieldedKeystore.signData(payload),
+        );
+        const txId = await wallet.wallet.submitTransaction(
+          await wallet.wallet.finalizeRecipe(recipe),
+        );
+        logger.info(`Dust registration tx submitted: ${txId}`);
+      } else {
+        logger.info('No unregistered NIGHT UTXOs to register for dust generation.');
+      }
+
+      // Dust generation is async after NIGHT registration; wait for spendable DUST.
+      logger.info('Waiting for spendable DUST...');
+      let dustEmissionCount = 0;
       await firstValueFrom(
         wallet.wallet.state().pipe(
-          tap((s) =>
-            logger.info(
-              `dust coins=${s.dust.availableCoins.length}, balance=${s.dust.balance(new Date())}`,
-            ),
-          ),
+          tap((s) => {
+            dustEmissionCount++;
+            if (dustEmissionCount % 300 === 1) {
+              const progress = (s.dust as { state?: { progress?: unknown } })?.state?.progress;
+              const p = (progress ?? {}) as {
+                appliedIndex?: number | bigint;
+                highestRelevantWalletIndex?: number | bigint;
+              };
+              const done =
+                typeof p.appliedIndex === 'bigint' ? p.appliedIndex : BigInt(p.appliedIndex ?? 0);
+              const total =
+                typeof p.highestRelevantWalletIndex === 'bigint'
+                  ? p.highestRelevantWalletIndex
+                  : BigInt(p.highestRelevantWalletIndex ?? 0);
+              const pct = total > 0n ? (Number((done * 100n) / total)) : 0;
+              logger.info(
+                `dust coins=${s.dust.availableCoins.length}, balance=${s.dust.balance(new Date())}, ` +
+                  `sync=${done}/${total} (${pct}%)`,
+              );
+            }
+          }),
           filter((s) => s.dust.availableCoins.length >= 1 && s.dust.balance(new Date()) > 0n),
           take(1),
-          timeout({
-            each: dustTimeoutMs,
-            with: () =>
-              throwError(
-                () =>
-                  new Error(
-                    `No spendable DUST within ${dustTimeoutMs}ms. Ensure NIGHT is funded and dust registration succeeded.`,
-                  ),
-              ),
-          }),
         ),
       );
       logger.info('Spendable DUST ready');

@@ -7,17 +7,26 @@
     "node": ">=22.0.0"
   },
   "scripts": {
+    "setup": "vite-node scripts/setup.ts",
     "compile": "compact compile contracts/counter.compact contracts/managed/counter",
     "test": "NODE_OPTIONS='--experimental-vm-modules' vitest run",
-    "test:local": "MIDNIGHT_NETWORK=local yarn test",
-    "test:preview": "MIDNIGHT_NETWORK=preview yarn test",
-    "test:preprod": "MIDNIGHT_NETWORK=preprod yarn test",
+    "test:local": "MIDNIGHT_NETWORK=local npm run test",
+    "test:preview": "MIDNIGHT_NETWORK=preview npm run test",
+    "test:preprod": "MIDNIGHT_NETWORK=preprod npm run test",
     "env:up": "docker compose up -d --wait",
     "env:down": "docker compose down",
     "proof:up": "docker compose up -d --wait proof-server",
     "proof:down": "docker compose stop proof-server",
     "wait:dust": "vite-node scripts/wait-for-dust.ts",
-    "validate": "yarn env:up && yarn test:local; yarn env:down"
+    "validate": "npm run env:up && npm run test:local; npm run env:down",
+    "web:install": "npm --prefix web install",
+    "web:dev": "npm --prefix web run dev",
+    "web:build": "npm run compile && npm --prefix web run build",
+    "web:preview": "npm --prefix web run preview",
+    "web-l1:install": "npm --prefix web-l1 install",
+    "web-l1:dev": "npm --prefix web-l1 run dev",
+    "web-l1:build": "npm run compile && npm --prefix web-l1 run build",
+    "web-l1:preview": "npm --prefix web-l1 run preview"
   },
   "dependencies": {
     "@midnight-ntwrk/midnight-js-contracts": "4.1.1",
@@ -48,5 +57,5 @@
   "resolutions": {
     "@midnight-ntwrk/wallet-sdk": "1.2.0"
   },
-  "packageManager": "yarn@1.22.22"
+  "packageManager": "npm@11.14.1"
 }

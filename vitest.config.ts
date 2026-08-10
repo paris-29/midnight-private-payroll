@@ -13,8 +13,10 @@ export default defineConfig({
   test: {
     environment: 'node',
     globals: true,
-    testTimeout: 10 * 60_000,
-    hookTimeout: isRemote ? 90 * 60_000 : 15 * 60_000,
+    // No hook/test timeouts: wallet sync and DUST generation can take
+    // arbitrarily long on a live network, so tests wait as long as needed.
+    hookTimeout: Infinity,
+    testTimeout: Infinity,
     env: envFromFile,
     include: ['src/**/*.test.ts'],
     reporters: ['default'],

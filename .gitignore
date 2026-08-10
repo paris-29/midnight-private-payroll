@@ -1,6 +1,20 @@
 /node_modules
+/web/node_modules
+/web/dist
+/web/.vite
+/web/public/keys
+/web/public/zkir
+/web-l1/node_modules
+/web-l1/dist
+/web-l1/.vite
+/web-l1/public/keys
+/web-l1/public/zkir
+prompts.txt
+opencode.json
 /contracts/managed/**
 !/contracts/managed/README.md
+!/contracts/managed/counter/
+!/contracts/managed/counter/**
 /contracts/hello-world.compact
 /logs
 deployment.json
@@ -8,3 +22,6 @@ deployment.json
 /.midnight-expert
 .env.preview
 .env.preprod
+/web/.env.local
+
+*.tsbuildinfo
