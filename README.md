@@ -167,7 +167,19 @@ Script (under 2 minutes) for Level 2:
 
 ## Initial Idea
 
-[HUMAN FILLS]
+I came into the Midnight Builder Challenge with zero knowledge of Midnight, Compact, or ZK
+programming. I started with the simplest thing that still showed off the core promise of the
+platform: proving that you know a secret without ever revealing it.
+
+So I built an "authorized counter." Anyone can see the count, and the owner can increment it —
+but only by presenting a zero-knowledge proof that they hold the owner secret, whose hash is
+publicly committed on-chain. The secret itself never touches the ledger.
+
+What started as a learning exercise turned into a full payroll-inspired pattern: a contract
+with a public state, a private witness, and a deliberate disclosure of what the platform can
+and cannot reveal. Along the way I learned that deploying can be done straight from the
+browser — which I built into the site so anyone with a wallet can spin up their own counter
+in about two minutes.
 
 ## Screenshots
 
